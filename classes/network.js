@@ -152,33 +152,37 @@ export default class Network {
     try {
       msg.primary(`[debug::network] Preparing test..`);
       const accounts = this.cache.data;
-      const length = 10;
-      const addresses = [];
-      const ids = [];
-      const amounts = [];
-      const time = Math.round(Date.now()/1000);
+      const length = accounts.length;
+      let addresses = [];
+      let ids = [];
+      let amounts = [];
   
       for(let i = 0; i < length; i++) {
+        const time = Math.round(Date.now()/1000);
         addresses.push(accounts[i].address);
-        ids.push(time+ i);
+        ids.push(time);
         amounts.push(ethers.utils.parseUnits(`${Math.random().toFixed(2)}`, 'ether'))
+
+        if ((i + 1) % 100 === 0 || (i+1) === length) {
+          // return this.ownerStake(addresses, ids, amounts);
+          const tx = await this.staking.ownerStake(addresses, ids, amounts, {
+            gasLimit: data.gasLimit,
+            gasPrice: data.price,
+            nonce: this.getNonce(),
+          });
+
+          msg.success(
+            `[debug::transact] TX has been submitted. Waiting for response..\n`
+          );
+          let receipt = await tx.wait();
+          msg.success(
+            `[Owner:stake]: https://testnet.bscscan.com/tx/${receipt.transactionHash}`
+          );
+          addresses = [];
+          ids = [];
+          amounts = [];
+        }
       }  
-      
-      // return this.ownerStake(addresses, ids, amounts);
-      const tx = await this.staking.ownerStake(addresses, ids, amounts, {
-        gasLimit: data.gasLimit,
-        gasPrice: data.price,
-        nonce: this.getNonce(),
-      });
-
-      msg.success(
-        `[debug::transact] TX has been submitted. Waiting for response..\n`
-      );
-      let receipt = await tx.wait();
-      msg.success(
-        `[Owner:stake]: https://testnet.bscscan.com/tx/${receipt.transactionHash}`
-      );
-
     } catch (error) {
       console.log(`[error::ownerStake] ${error}`);
       process.exit();
