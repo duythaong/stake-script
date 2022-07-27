@@ -32,4 +32,9 @@ export default class Cache {
 		this.data.addresses[_address] = {};
 		return this.data.addresses[_address];
 	}
+
+	createList() {
+		this.data = [];
+		return this.data;
+	}
 }

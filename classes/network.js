@@ -1,6 +1,7 @@
 import ethers from "ethers";
 import dotenv from "dotenv";
 import Message from "./msg.js";
+import Cache from './cache.js';
 
 dotenv.config();
 const msg = new Message();
@@ -151,20 +152,35 @@ export default class Network {
   async testOwnerStake() {
     try {
       msg.primary(`[debug::network] Preparing test..`);
+      const cache = new Cache();
+      await cache.load('owner-stake.json');
+      cache.createList();
+
       const accounts = this.cache.data;
       const length = accounts.length;
+
       let addresses = [];
       let ids = [];
       let amounts = [];
-  
+      let sum = 0;
+
       for(let i = 0; i < length; i++) {
         const time = Math.round(Date.now()/1000);
+        const amount = ethers.utils.parseUnits(`${Math.random().toFixed(2)}`, 'ether')
         addresses.push(accounts[i].address);
         ids.push(time);
-        amounts.push(ethers.utils.parseUnits(`${Math.random().toFixed(2)}`, 'ether'))
+        amounts.push(amount)
+        sum += Number(amount);
 
+        const object = {
+          account: accounts[i].address,
+          id: time,
+          amount: amount.toString()
+        }
+
+        cache.data.push(object)
+        await cache.save();
         if ((i + 1) % 100 === 0 || (i+1) === length) {
-          // return this.ownerStake(addresses, ids, amounts);
           const tx = await this.staking.ownerStake(addresses, ids, amounts, {
             gasLimit: data.gasLimit,
             gasPrice: data.price,
@@ -183,6 +199,7 @@ export default class Network {
           amounts = [];
         }
       }  
+      console.log(sum)
     } catch (error) {
       console.log(`[error::ownerStake] ${error}`);
       process.exit();
