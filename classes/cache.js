@@ -34,7 +34,7 @@ export default class Cache {
 	}
 
 	createList() {
-		this.data = [];
+		if(!this.data.length) this.data = [];
 		return this.data;
 	}
 }

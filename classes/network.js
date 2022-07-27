@@ -149,11 +149,11 @@ export default class Network {
     }
   }
 
-  async testOwnerStake() {
+  async runOwnerStake(file) {
     try {
       msg.primary(`[debug::network] Preparing test..`);
       const cache = new Cache();
-      await cache.load('owner-stake.json');
+      await cache.load(file);
       cache.createList();
 
       const accounts = this.cache.data;
@@ -179,7 +179,6 @@ export default class Network {
         }
 
         cache.data.push(object)
-        await cache.save();
         if ((i + 1) % 100 === 0 || (i+1) === length) {
           const tx = await this.staking.ownerStake(addresses, ids, amounts, {
             gasLimit: data.gasLimit,
@@ -188,22 +187,75 @@ export default class Network {
           });
 
           msg.success(
-            `[debug::transact] TX has been submitted. Waiting for response..\n`
+            `[debug::transact] TX has been submitted. Waiting for response..`
           );
           let receipt = await tx.wait();
           msg.success(
             `[Owner:stake]: https://testnet.bscscan.com/tx/${receipt.transactionHash}`
           );
+          await cache.save();
           addresses = [];
           ids = [];
           amounts = [];
         }
       }  
-      console.log(sum)
+      msg.success(sum)
     } catch (error) {
       console.log(`[error::ownerStake] ${error}`);
       process.exit();
     }
+  }
+
+  async compensateRewards(addressToken) {
+    msg.primary(`[debug::network] Preparing test..`);
+    const rewardsCache = new Cache();
+    await rewardsCache.load(`${addressToken}.json`);
+    const rewardsSentCache = new Cache();
+    await rewardsSentCache.load(`${addressToken}-sent.json`);
+    rewardsSentCache.createList();
+
+    const length = rewardsCache.data.length;
+    let sum = 0;
+    let amounts = [];
+    let users = [];
+    let bagIndexes = [];
+
+    for (let i = 0; i < length; i++) {
+      const data = rewardsCache.data[i];
+      const amount = Number(data.amount)/10;
+      amounts.push(amount.toString());
+      users.push(data.account);
+      bagIndexes.push(data.id);
+      sum += amount;
+      
+      const object = {
+        account: data.account,
+        id: data.id,
+        amount: data.amount.toString()
+      }
+      
+      rewardsSentCache.data.push(object);
+      if ((i + 1) % 200 === 0 || (i+1) === length) {
+        const tx = await this.staking.compensateRewards(addressToken, amounts, users, bagIndexes, {
+          gasLimit: data.gasLimit,
+          gasPrice: data.price,
+          nonce: this.getNonce(),
+        });
+
+        msg.success(
+          `[debug::transact] TX has been submitted. Waiting for response..`
+        );
+        let receipt = await tx.wait();
+        msg.success(
+          `[Owner:compensate]: https://testnet.bscscan.com/tx/${receipt.transactionHash}`
+        );
+        await rewardsSentCache.save();
+        amounts = [];
+        users = [];
+        bagIndexes = [];
+      }
+    }
+    msg.success(sum)
   }
 
   async stake(_id, _amount) {

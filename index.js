@@ -8,14 +8,6 @@ const network = new Network();
 
 // main
 (async () => {
-	await cache.load('accounts.json');
-	await network.load(cache);
-  // await network.prepare()
-  await network.testOwnerStake();
-    
-  // print debug info
-  // console.clear();
-
   // get starting tick
   let startingTick = Math.floor(new Date().getTime() / 1000);
 
@@ -27,6 +19,12 @@ const network = new Network();
       process.exit();
   }
 
+  await cache.load('accounts.json');
+	await network.load(cache);
+  // await network.prepare()
+  // await network.runOwnerStake('owner-stake2.json');
+  await network.compensateRewards(network.btcb.address);
+  
   // save cache just to be sure
   await cache.save();
 
