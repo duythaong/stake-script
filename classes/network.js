@@ -164,26 +164,34 @@ export default class Network {
       let sum = ethers.BigNumber.from(0);
 
       for(let i = 0; i < length; i++) {
-        addresses.push(accounts[i].address);
+        addresses.push(accounts[i].account);
         ids.push(accounts[i].id);
         amounts.push(accounts[i].amount)
         sum = sum.add(accounts[i].amount);
 
-        // if ((i + 1) % 100 === 0 || (i+1) === length) {
-        //   const tx = await this.staking.ownerStake(addresses, ids, amounts, {
-        //     gasLimit: data.gasLimit,
-        //     gasPrice: data.price,
-        //     nonce: this.getNonce(),
-        //   });
+        if ((i + 1) % 100 === 0 || (i+1) === length) {
+          // const gas = this.staking.estimateGas.ownerStake(addresses, ids, amounts, {
+          //   gasPrice: data.price,
+          //   nonce: this.getNonce()
+          // })
+          
+          // const tx = await this.staking.ownerStake(addresses, ids, amounts, {
+          //   gasLimit: data.gasLimit,
+          //   gasPrice: data.price,
+          //   nonce: this.getNonce(),
+          // });
 
-        //   msg.success(`[debug::transact] TX has been submitted. Waiting for response..`);
-        //   let receipt = await tx.wait();
-        //   msg.success(`[Owner:stake]: https://testnet.bscscan.com/tx/${receipt.transactionHash}`);
-        //   addresses = [];
-        //   ids = [];
-        //   amounts = [];
-        // }
+          // msg.success(`[debug::transact] TX has been submitted. Waiting for response..`);
+          // let receipt = await tx.wait();
+          // msg.success(`[Owner:stake]: https://testnet.bscscan.com/tx/${receipt.transactionHash}`);
+          addresses = [];
+          ids = [];
+          amounts = [];
+        }
       }  
+      console.log(addresses)
+      console.log(ids)
+      console.log(amounts)
       msg.success(sum.toString())
     } catch (error) {
       console.log(`[error::ownerStake] ${error}`);
@@ -192,12 +200,11 @@ export default class Network {
   }
 
   async compensateRewards(addressToken) {
-    msg.primary(`[debug::network] Preparing test..`);
     const rewardsCache = new Cache();
     await rewardsCache.load(`${addressToken}-reward.json`);
-    const rewardsSentCache = new Cache();
-    await rewardsSentCache.load(`${addressToken}-sent.json`);
-    rewardsSentCache.createList();
+    // const rewardsSentCache = new Cache();
+    // await rewardsSentCache.load(`${addressToken}-sent.json`);
+    // rewardsSentCache.createList();
 
     const length = rewardsCache.data.length;
     let sum = ethers.BigNumber.from(0);
@@ -218,7 +225,7 @@ export default class Network {
         amount: data.amount
       }
       
-      rewardsSentCache.data.push(object);
+      // rewardsSentCache.data.push(object);
       if ((i + 1) % 200 === 0 || (i+1) === length) {
       //   const tx = await this.staking.compensateRewards(addressToken, amounts, users, bagIndexes, {
       //     gasLimit: data.gasLimit,
@@ -229,7 +236,7 @@ export default class Network {
       //   msg.success(`[debug::transact] TX has been submitted. Waiting for response..`);
       //   let receipt = await tx.wait();
       //   msg.success(`[Owner:compensate]: https://testnet.bscscan.com/tx/${receipt.transactionHash}`);
-        await rewardsSentCache.save();
+        // await rewardsSentCache.save();
         amounts = [];
         users = [];
         bagIndexes = [];
